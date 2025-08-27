@@ -1,0 +1,36 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run weekly on Sunday at midnight
+    - cron: "0 0 * * 0"
+
+jobs:
+  security_scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Security Audit
+        run: npm audit --audit-level=high
+
+      - name: Scan for Secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          baseRef: ${{ github.event.pull_request.base.ref || github.ref }}
+          headRef: ${{ github.event.pull_request.head.ref || github.sha }}

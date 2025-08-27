@@ -1,0 +1,79 @@
+{
+  "name": "@missingstudio/cli",
+  "version": "0.0.2",
+  "description": "Missing Studio's AI assistant for interacting with the Model Context Protocol servers",
+  "keywords": [
+    "mcp",
+    "cli",
+    "ai",
+    "model context protocol"
+  ],
+  "author": "Praveen Yadav <praveen.yadav@missing.studio>",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mstudio": "dist/index.js",
+    "missingstudio": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc -w",
+    "clean": "rm -rf dist",
+    "dev": "tsx src/index.ts",
+    "start": "npm run build && node dist/index.js",
+    "prepare": "husky",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --check \"**/*.{js,ts,tsx,md,mdx}\"",
+    "format:fix": "prettier --write \"**/*.{js,ts,tsx,md,mdx}\"",
+    "test": "vitest --config vitest.config.js --run",
+    "test:watch": "vitest --config vitest.config.js",
+    "ci": "npm run format && npm run test",
+    "changeset": "changeset",
+    "prebuild": "npm run clean",
+    "prepublish": "npm run build",
+    "prepublishOnly": "npm run ci",
+    "version": "changeset version",
+    "release": "changeset publish",
+    "local-version": "changeset version && git push --follow-tags"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^14.0.0",
+    "dotenv": "^17.2.1",
+    "ink": "^6.2.2",
+    "ink-gradient": "^3.0.0",
+    "react": "^19.1.1"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.6",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.11",
+    "husky": "^9.1.7",
+    "ink-testing-library": "^4.0.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/missingstudio/cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/missingstudio/cli/issues"
+  },
+  "homepage": "https://github.com/missingstudio/cli#readme"
+}

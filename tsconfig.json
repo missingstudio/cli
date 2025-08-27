@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    // base options
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    // strictness
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    // if transpiling with typescript
+    "module": "node20",
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
+
+    "lib": ["ES2022"],
+    "jsx": "react-jsx"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

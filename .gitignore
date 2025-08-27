@@ -1,0 +1,21 @@
+# dependencies (bun install)
+node_modules
+
+# output
+dist/
+
+# logs
+logs
+_.log
+coverage.json
+
+# dotenv environment variable files
+.env
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# Finder (MacOS) folder config
+.DS_Store
