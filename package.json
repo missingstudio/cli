@@ -46,10 +46,14 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@inkjs/ui": "^2.0.0",
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "chalk": "^5.6.0",
     "commander": "^14.0.0",
     "dotenv": "^17.2.1",
     "ink": "^6.2.2",
     "ink-gradient": "^3.0.0",
+    "object-hash": "^3.0.0",
     "react": "^19.1.1"
   },
   "devDependencies": {
@@ -57,6 +61,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/node": "^24.3.0",
+    "@types/object-hash": "^3.0.6",
     "@types/react": "^19.1.11",
     "husky": "^9.1.7",
     "ink-testing-library": "^4.0.0",

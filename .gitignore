@@ -11,6 +11,7 @@ coverage.json
 
 # dotenv environment variable files
 .env
+.mstudio*
 
 # caches
 .eslintcache

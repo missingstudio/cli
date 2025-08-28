@@ -6,6 +6,7 @@ import { Command } from "commander";
 
 import App from "./ui/app.js";
 import pkg from "../package.json" with { type: "json" };
+import { registerBuiltInCommands } from "./commands/index.js";
 
 const program = new Command();
 
@@ -21,6 +22,9 @@ program
   .option("-c, --config <path>", "Path to config file")
   .option("-v, --verbose", "Enable verbose logging", false);
 
+// Register built-in commands
+registerBuiltInCommands(program);
+
 // If user supplies only options but no subcommand, show interactive UI
 program.action(() => {
   render(React.createElement(App));
@@ -29,4 +33,4 @@ program.action(() => {
 program.showHelpAfterError("(add --help for usage)");
 program.configureHelp({ sortSubcommands: true, sortOptions: true });
 
-await program.parseAsync(process.argv);
+program.parse(process.argv);
