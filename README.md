@@ -1,6 +1,19 @@
 ![Missing Studio CLI](assets/mstudio.png)
 
-Missing Studio's AI assistant for interacting with Model Context Protocol (MCP) servers. It provides a friendly, interactive terminal UI to get started quickly.
+## Overview
+
+Missing Studio's AI assistant for interacting with **Model Context Protocol (MCP)** servers. It provides a friendly, interactive terminal UI to get started quickly.
+
+Built by [Missing Studio](https://www.missing.studio)
+
+**Key Features:**
+
+- 💬 Chat interface for MCP servers
+- 🔌 **MCP tooling**
+- ⌨ Beautiful terminal insterface build with [Ink](https://github.com/vadimdemedes/ink)
+- 🌍 Use from anywhere with `npm i -g @missingstudio/cli`
+
+# Quick Start
 
 - Node.js: >= 18
 - Binaries: `missingstudio` (primary), `mstudio` (alias)
