@@ -6,31 +6,42 @@ import { Command } from "commander";
 
 import App from "./ui/app.js";
 import pkg from "../package.json" with { type: "json" };
-import { registerBuiltInCommands } from "./commands/index.js";
+import { mcp } from "./commands/mcp.js";
 
-const program = new Command();
+async function main() {
+  const program = new Command();
 
-program
-  .name("mstudio")
-  .description((pkg as any).description)
-  .version((pkg as any).version, "-V, --version", "Output the version number");
+  program
+    .name("mstudio")
+    .description((pkg as any).description)
+    .version(
+      (pkg as any).version,
+      "-V, --version",
+      "Output the version number",
+    );
 
-// Common options
-program
-  .allowExcessArguments(true)
-  .allowUnknownOption()
-  .option("-c, --config <path>", "Path to config file")
-  .option("-v, --verbose", "Enable verbose logging", false);
+  // Common options
+  program
+    .allowExcessArguments(true)
+    .allowUnknownOption()
+    .option("-c, --config <path>", "Path to config file")
+    .option("-v, --verbose", "Enable verbose logging", false);
 
-// Register built-in commands
-registerBuiltInCommands(program);
+  // Register built-in commands
+  program.addCommand(mcp);
 
-// If user supplies only options but no subcommand, show interactive UI
-program.action(() => {
-  render(React.createElement(App));
-});
+  // If user supplies only options but no subcommand, show interactive UI
+  program.action(() => {
+    render(React.createElement(App));
+  });
 
-program.showHelpAfterError("(add --help for usage)");
-program.configureHelp({ sortSubcommands: true, sortOptions: true });
+  program.showHelpAfterError("(add --help for usage)");
+  program.configureHelp({ sortSubcommands: true, sortOptions: true });
 
-program.parse(process.argv);
+  program.parse(process.argv);
+}
+
+process.on("SIGINT", () => process.exit(0));
+process.on("SIGTERM", () => process.exit(0));
+
+main();
