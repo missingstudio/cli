@@ -12,3 +12,21 @@ export function loadMCPConfig(): MCPConfig {
   const servers = settings.mcpServers || {};
   return { servers };
 }
+
+export function addMCPServer(name: string, config: MCPServerConfig): void {
+  const configManager = getConfigManager();
+  const { servers } = loadMCPConfig();
+
+  const updated = { ...servers, [name]: config };
+  configManager.saveProjectSettings({ mcpServers: updated });
+}
+
+export function removeMCPServer(name: string): void {
+  const configManager = getConfigManager();
+  const { servers } = loadMCPConfig();
+
+  if (servers) {
+    delete servers[name];
+    configManager.saveProjectSettings({ mcpServers: servers });
+  }
+}

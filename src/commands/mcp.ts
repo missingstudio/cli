@@ -1,14 +1,15 @@
 import React from "react";
 import { Command } from "commander";
 import { render } from "ink";
+import chalk from "chalk";
 import { MCPList } from "../components/mcp/mcp-list.js";
 import { MCPTest } from "../components/mcp/mcp-test.js";
-import { getConfigManager, getDefaultConfigPath } from "../config/manager.js";
-import type { MCPServerConfig, TransportType } from "../mcp/types.js";
+import { getDefaultConfigPath } from "../config/manager.js";
 import { TRANSPORT_TYPES } from "../mcp/constants.js";
 import { parseKeyValue } from "../mcp/utils.js";
-import { loadMCPConfig } from "../mcp/config.js";
-import chalk from "chalk";
+import { addMCPServer, removeMCPServer } from "../mcp/config.js";
+import { getMCPClientManager } from "../mcp/manager.js";
+import type { MCPServerConfig, TransportType } from "../mcp/types.js";
 
 export function createMCPCommand(): Command {
   const mcp = new Command("mcp");
@@ -38,9 +39,6 @@ export function createMCPCommand(): Command {
     .option("--timeout <ms>", "Operation timeout in ms", (v) => parseInt(v, 10))
     .option("--enabled", "Add server as enabled", true)
     .action(async function (this: Command, name: string, opts: any) {
-      const { servers } = loadMCPConfig();
-      const configManager = getConfigManager();
-
       let config: MCPServerConfig;
       switch (opts.transport as TransportType) {
         case TRANSPORT_TYPES.STDIO:
@@ -74,11 +72,7 @@ export function createMCPCommand(): Command {
         default:
           throw new Error(`Unknown transport type: ${opts.transport}`);
       }
-
-      const existing = (servers as Record<string, any>) || {};
-      const updated = { ...existing, [name]: config };
-      configManager.saveProjectSettings({ mcpServers: updated });
-
+      await addMCPServer(name, config);
       const path = getDefaultConfigPath();
       console.log(chalk.green(`✓ Added MCP server: ${name} to ${path}`));
     });
@@ -94,6 +88,17 @@ export function createMCPCommand(): Command {
         React.createElement(MCPList, { verbose }),
       );
       await waitUntilExit();
+    });
+
+  mcp
+    .command("remove <name>")
+    .description("Remove an MCP server")
+    .action(async (name: string) => {
+      const mcpClientManager = getMCPClientManager();
+      await mcpClientManager.removeClient(name);
+
+      await removeMCPServer(name);
+      console.log(chalk.green(`✓ Removed MCP server: ${name}`));
     });
 
   mcp
