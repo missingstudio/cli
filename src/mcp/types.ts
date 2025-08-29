@@ -11,7 +11,7 @@ import type {
  * List of all MCP client transport types.
  * Which define the communication protocol used to connect MCP servers.
  */
-export type TransportType = "stdio" | "sse" | "http" | "streamable-http";
+export type TransportType = "stdio" | "sse" | "http" | "streamable-http" | "ws";
 
 export interface BaseServerConfig {
   type: TransportType;
@@ -37,11 +37,16 @@ export interface StreamableHttpServerConfig extends BaseServerConfig {
   url: string;
   headers?: Record<string, string>;
 }
+export interface WebSocketServerConfig extends BaseServerConfig {
+  type: "ws";
+  url: string;
+}
 
 export type MCPServerConfig =
   | StdioServerConfig
   | SSEServerConfig
-  | StreamableHttpServerConfig;
+  | StreamableHttpServerConfig
+  | WebSocketServerConfig;
 
 export type ServerConfigs = Record<string, MCPServerConfig>;
 

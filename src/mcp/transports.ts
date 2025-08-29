@@ -9,7 +9,9 @@ import type {
   SSEServerConfig,
   StdioServerConfig,
   StreamableHttpServerConfig,
+  WebSocketServerConfig,
 } from "./types.js";
+import { WebSocketClientTransport } from "@modelcontextprotocol/sdk/client/websocket.js";
 
 interface TransportFactory {
   create(config: MCPServerConfig): Promise<Transport>;
@@ -51,11 +53,18 @@ class StreamableHttpTransportFactory implements TransportFactory {
     );
   }
 }
+class WebSocketTransportFactory implements TransportFactory {
+  async create(config: WebSocketServerConfig): Promise<Transport> {
+    if (!config.url) throw new Error("URL is required for WebSocket transport");
+    return new WebSocketClientTransport(new URL(config.url));
+  }
+}
 
 const factories: Record<string, TransportFactory> = {
   [TRANSPORT_TYPES.STDIO]: new StdioTransportFactory(),
   [TRANSPORT_TYPES.SSE]: new SSETransportFactory(),
   [TRANSPORT_TYPES.STREAMABLE_HTTP]: new StreamableHttpTransportFactory(),
+  [TRANSPORT_TYPES.WS]: new WebSocketTransportFactory(),
 };
 
 export async function createTransport(

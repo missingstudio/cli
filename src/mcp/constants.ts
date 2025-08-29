@@ -3,6 +3,7 @@ export const TRANSPORT_TYPES = {
   STDIO: "stdio",
   SSE: "sse",
   HTTP: "http",
+  WS: "ws",
   STREAMABLE_HTTP: "streamable-http",
 } as const;
 
