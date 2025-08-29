@@ -42,7 +42,7 @@
     "prepublishOnly": "npm run ci",
     "version": "changeset version",
     "release": "changeset publish",
-    "local-version": "changeset version && git push --follow-tags"
+    "local-publish": "changeset publish && git push --follow-tags"
   },
   "license": "MIT",
   "dependencies": {
