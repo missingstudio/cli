@@ -13,6 +13,20 @@ export const ERROR_MESSAGES = {
   NOT_CONNECTED: "Client not connected. Please call connect() first",
 
   NO_CLIENT_FOR_TOOL: "No client found for tool",
+  TOOL_EXECUTION_FAILED: "Failed to execute tool",
+  TOOL_LISTING_FAILED: "Failed to list tools",
+
+  CLIENT_REGISTERED: "Client registered successfully",
+  CLIENT_REMOVED: "Client removed successfully",
+  CLIENT_ALREADY_REGISTERED: "Client already registered",
 
   UNSUPPORTED_TRANSPORT_TYPE: "Unsupported transport type",
+};
+
+export const LOG_PREFIXES = {
+  MANAGER: "MCP Client Manager:",
+  CLIENT: "MCP Client:",
+  TOOL: "MCP Tool:",
+  PROMPT: "MCP Prompt:",
+  RESOURCE: "MCP Resource:",
 };

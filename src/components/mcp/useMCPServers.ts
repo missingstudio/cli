@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import type { Row, Summary } from "./types.js";
 import { loadMCPConfig } from "../../mcp/config.js";
 import { getMCPClientManager } from "../../mcp/manager.js";
+import { createLogger } from "../../logger/index.js";
 
-export function useMCPServers(exit: () => void) {
+export function useMCPServers(exit: () => void, verbose: boolean) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -17,8 +18,12 @@ export function useMCPServers(exit: () => void) {
   useEffect(() => {
     (async () => {
       try {
+        const logger = createLogger({ silent: !verbose, level: "info" });
         const config = loadMCPConfig();
+
         const manager = getMCPClientManager();
+        manager.setLogger(logger);
+
         const servers = Object.entries(config.servers || {});
 
         if (servers.length === 0) return;

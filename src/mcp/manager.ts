@@ -1,5 +1,9 @@
 import EventEmitter from "events";
 import type {
+  GetPromptResult,
+  ReadResourceResult,
+} from "@modelcontextprotocol/sdk/types.js";
+import type {
   IMCPClient,
   IMCPClientManager,
   MCPServerConfig,
@@ -8,11 +12,8 @@ import type {
   ToolSet,
 } from "./types.js";
 import { MCPClient } from "./client.js";
-import type {
-  GetPromptResult,
-  ReadResourceResult,
-} from "@modelcontextprotocol/sdk/types.js";
-import { ERROR_MESSAGES } from "./constants.js";
+import { ERROR_MESSAGES, LOG_PREFIXES } from "./constants.js";
+import { Logger } from "../logger/index.js";
 
 interface CacheEntry<T> {
   data: T;
@@ -35,11 +36,17 @@ interface ClientRegistryEntry {
   failureCount: number;
 }
 
+export interface MCPClientManagerOptions {
+  logger?: Logger;
+}
+
 export class MCPClientManager
   extends EventEmitter
   implements IMCPClientManager
 {
   private static instance: MCPClientManager;
+  protected logger?: Logger;
+  protected verbose = false;
 
   private clients: Map<string, ClientRegistryEntry> = new Map();
   private failedConnections: Record<string, string> = {};
@@ -54,6 +61,11 @@ export class MCPClientManager
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
   private maxCacheSize = 1000;
 
+  constructor(options: MCPClientManagerOptions = {}) {
+    super();
+    this.logger = options.logger;
+  }
+
   public static getInstance(): MCPClientManager {
     if (!MCPClientManager.instance) {
       MCPClientManager.instance = new MCPClientManager();
@@ -61,8 +73,18 @@ export class MCPClientManager
     return MCPClientManager.instance;
   }
 
+  setLogger(logger: Logger): void {
+    this.logger = logger;
+  }
+
   registerClient(name: string, client: IMCPClient): void {
-    if (this.clients.has(name)) return;
+    if (this.clients.has(name)) {
+      this.logger?.warn(
+        `${LOG_PREFIXES.MANAGER} ${ERROR_MESSAGES.CLIENT_ALREADY_REGISTERED}: ${name}`,
+        { clientName: name },
+      );
+      return;
+    }
 
     this.clients.set(name, {
       client,
@@ -71,6 +93,11 @@ export class MCPClientManager
       lastSeen: Date.now(),
       failureCount: 0,
     });
+
+    this.logger?.info(
+      `${LOG_PREFIXES.MANAGER} ${ERROR_MESSAGES.CLIENT_REGISTERED}: ${name}`,
+      { clientName: name, totalClients: this.clients.size },
+    );
   }
 
   async getAllTools(): Promise<ToolSet> {
@@ -98,12 +125,22 @@ export class MCPClientManager
               clientName: name,
             });
           });
+
+          this.logger?.debug(
+            `${LOG_PREFIXES.MANAGER} Retrieved ${Object.keys(tools).length} tools from ${name}`,
+            { clientName: name, toolCount: Object.keys(tools).length },
+          );
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           errors.push(`${name}: ${errorMessage}`);
 
           this._updateClientFailure(name);
+
+          this.logger?.error(
+            `${LOG_PREFIXES.MANAGER} Failed to get tools from ${name}`,
+            { clientName: name, error: errorMessage },
+          );
         }
       },
     );
@@ -116,6 +153,15 @@ export class MCPClientManager
     }
 
     this._cleanupCache(this.toolCache);
+
+    this.logger?.debug(
+      `${LOG_PREFIXES.MANAGER} Retrieved ${Object.keys(allTools).length} total tools`,
+      {
+        toolCount: Object.keys(allTools).length,
+        clientCount: this.clients.size,
+      },
+    );
+
     return allTools;
   }
 
@@ -138,7 +184,13 @@ export class MCPClientManager
         throw new Error(`${ERROR_MESSAGES.NO_CLIENT_FOR_TOOL}: ${toolName}`);
       }
     }
-    return client.callTool(toolName, args);
+    const result = await client.callTool(toolName, args);
+    this.logger?.info(
+      `${LOG_PREFIXES.MANAGER} Tool executed successfully: ${toolName}`,
+      { toolName },
+    );
+
+    return result;
   }
 
   listAllPrompts(): Promise<string[]> {
@@ -168,7 +220,7 @@ export class MCPClientManager
   async addServer(name: string, config: MCPServerConfig): Promise<void> {
     try {
       if (!this.clients.has(name)) {
-        const client = new MCPClient(name, config);
+        const client = new MCPClient(name, config, { logger: this.logger });
         this.registerClient(name, client);
       }
 
@@ -190,6 +242,14 @@ export class MCPClientManager
 
       this.failedConnections[name] = errorMessage;
       this._updateClientFailure(name);
+
+      this.logger?.error(
+        `${LOG_PREFIXES.MANAGER} Failed to connect to server: ${name}`,
+        {
+          serverName: name,
+          error: errorMessage,
+        },
+      );
 
       throw error;
     }
@@ -228,21 +288,44 @@ export class MCPClientManager
   async removeClient(name: string): Promise<void> {
     const currentClient = this.clients.get(name);
 
-    if (!currentClient) return;
+    if (!currentClient) {
+      this.logger?.warn(
+        `${LOG_PREFIXES.MANAGER} Client not found for removal: ${name}`,
+        { clientName: name },
+      );
+      return;
+    }
+
     if (currentClient.connected) await currentClient.client.disconnect();
 
     // Remove from registry
     this.clients.delete(name);
     this._removeClientFromCaches(name);
     delete this.failedConnections[name];
+
+    this.logger?.info(
+      `${LOG_PREFIXES.MANAGER} Client removed successfully: ${name}`,
+    );
   }
 
   async disconnectAll(): Promise<void> {
+    this.logger?.info(`${LOG_PREFIXES.MANAGER} Disconnecting all clients`, {
+      clientCount: this.clients.size,
+    });
+
     const disconnectPromises = Array.from(this.clients.entries()).map(
       async ([name, entry]) => {
         try {
           if (entry.connected) await entry.client.disconnect();
-        } catch (error) {}
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+
+          this.logger?.warn(
+            `${LOG_PREFIXES.MANAGER} Error disconnecting client: ${name}`,
+            { clientName: name, error: errorMessage },
+          );
+        }
       },
     );
 
@@ -252,6 +335,10 @@ export class MCPClientManager
     this.clients.clear();
     this.failedConnections = {};
     this._clearAllCaches();
+
+    this.logger?.info(
+      `${LOG_PREFIXES.MANAGER} All clients disconnected and caches cleared`,
+    );
   }
 
   private _clearAllCaches(): void {

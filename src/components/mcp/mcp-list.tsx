@@ -8,7 +8,7 @@ import Table from "../ink-table.js";
 
 export function MCPList({ verbose = false }: { verbose?: boolean }) {
   const { exit } = useApp();
-  const { loading, rows, summary, error } = useMCPServers(exit);
+  const { loading, rows, summary, error } = useMCPServers(exit, verbose);
 
   // After data is ready and rendered, politely exit to finalize output
   useEffect(() => {

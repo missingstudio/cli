@@ -11,9 +11,19 @@ import type {
   ToolSet,
   TransportType,
 } from "./types.js";
-import { DEFAULT_TIMEOUT_MS, ERROR_MESSAGES } from "./constants.js";
+import {
+  DEFAULT_TIMEOUT_MS,
+  ERROR_MESSAGES,
+  LOG_PREFIXES,
+} from "./constants.js";
+import type { Logger } from "../logger/index.js";
+
+export interface MCPClientOptions {
+  logger?: Logger;
+}
 
 export class MCPClient implements IMCPClient {
+  private logger?: Logger;
   private client?: Client;
   private transport?: Transport;
   private connected: boolean = false;
@@ -22,7 +32,10 @@ export class MCPClient implements IMCPClient {
   constructor(
     private readonly name: string,
     private readonly config: MCPServerConfig,
-  ) {}
+    private readonly options: MCPClientOptions = {},
+  ) {
+    this.logger = options.logger;
+  }
 
   get serverName(): string {
     return this.name;
@@ -45,6 +58,14 @@ export class MCPClient implements IMCPClient {
   }
 
   async connect(): Promise<Client> {
+    if (this.connected && this.client) {
+      this.logger?.warn(
+        `${LOG_PREFIXES.CLIENT} Already connected to ${this.serverName}`,
+      );
+
+      return this.client;
+    }
+
     // Create MCP transport based on configuration
     this.transport = await createTransport(this.config);
 
@@ -72,8 +93,8 @@ export class MCPClient implements IMCPClient {
       timeout,
       "Client Connection timeout",
     );
-    this.connected = true;
 
+    this.connected = true;
     return this.client;
   }
 
@@ -86,13 +107,31 @@ export class MCPClient implements IMCPClient {
   }
 
   async disconnect(): Promise<void> {
-    if (!this.connected) return;
+    if (!this.connected) {
+      this.logger?.warn(
+        `${LOG_PREFIXES.CLIENT} Already disconnected from ${this.serverName}`,
+      );
+
+      return;
+    }
+
+    this.logger?.info(
+      `${LOG_PREFIXES.CLIENT} Disconnecting from ${this.serverName}`,
+    );
 
     try {
       await this._cleanup();
+      this.logger?.info(
+        `${LOG_PREFIXES.CLIENT} Successfully disconnected from ${this.serverName}`,
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+      this.logger?.error(
+        `${LOG_PREFIXES.CLIENT} ${ERROR_MESSAGES.DISCONNECTION_FAILED}: ${this.serverName}`,
+        { serverName: this.serverName, error: errorMessage },
+      );
+
       throw new Error(
         `${ERROR_MESSAGES.DISCONNECTION_FAILED}: ${errorMessage}`,
       );
@@ -103,26 +142,75 @@ export class MCPClient implements IMCPClient {
     this._ensureConnected();
     const timeout = this._getOperationTimeout();
 
-    const result = await this.withTimeout(
-      this.client!.listTools(),
-      timeout,
-      "List tools timeout",
-    );
+    try {
+      const result = await this.withTimeout(
+        this.client!.listTools(),
+        timeout,
+        "List tools timeout",
+      );
 
-    const toolSet: ToolSet = {};
-    result.tools.forEach((tool) => {
-      toolSet[tool.name] = {
-        description: tool.description || "",
-        parameters: tool.inputSchema as any,
-      };
-    });
+      const toolSet: ToolSet = {};
+      result.tools.forEach((tool) => {
+        toolSet[tool.name] = {
+          description: tool.description || "",
+          parameters: tool.inputSchema as any,
+        };
+      });
 
-    return toolSet;
+      this.logger?.debug(
+        `${LOG_PREFIXES.TOOL} Retrieved ${Object.keys(toolSet).length} tools`,
+        { serverName: this.serverName, toolCount: Object.keys(toolSet).length },
+      );
+
+      return toolSet;
+    } catch (error) {
+      this.logger?.error(`${LOG_PREFIXES.TOOL} Failed to retrieve tools`, {
+        serverName: this.serverName,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      throw new Error(
+        `${ERROR_MESSAGES.TOOL_LISTING_FAILED}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   async callTool(toolName: string, args: any): Promise<any> {
     this._ensureConnected();
-    return await this.client!.callTool({ name: toolName, arguments: args });
+
+    const timeout = this._getOperationTimeout(this.config);
+    this.logger?.info(`${LOG_PREFIXES.TOOL} Calling tool: ${toolName}`, {
+      toolName,
+      serverName: this.serverName,
+      timeout,
+    });
+
+    try {
+      const result = await this.withTimeout(
+        this.client!.callTool({ name: toolName, arguments: args }),
+        timeout,
+        `Tool execution timeout: ${toolName}`,
+      );
+
+      this.logger?.info(
+        `${LOG_PREFIXES.TOOL} Tool executed successfully: ${toolName}`,
+        { toolName, serverName: this.serverName },
+      );
+
+      return result;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      this.logger?.error(
+        `${LOG_PREFIXES.TOOL} Tool execution failed: ${toolName}`,
+        { toolName, serverName: this.serverName, error: errorMessage },
+      );
+
+      throw new Error(
+        `${ERROR_MESSAGES.TOOL_EXECUTION_FAILED}: ${errorMessage}`,
+      );
+    }
   }
 
   async listPrompts(): Promise<string[]> {

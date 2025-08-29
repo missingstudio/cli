@@ -10,6 +10,7 @@ import { parseKeyValue } from "../mcp/utils.js";
 import { addMCPServer, removeMCPServer } from "../mcp/config.js";
 import { getMCPClientManager } from "../mcp/manager.js";
 import type { MCPServerConfig, TransportType } from "../mcp/types.js";
+import { createLogger } from "../logger/index.js";
 
 export function createMCPCommand(): Command {
   const mcp = new Command("mcp");
@@ -102,8 +103,14 @@ export function createMCPCommand(): Command {
   mcp
     .command("remove <name>")
     .description("Remove an MCP server")
-    .action(async (name: string) => {
+    .action(async function (this: Command, name: string) {
+      const program = this.parent?.parent;
+      const verbose = program?.opts<{ verbose?: boolean }>().verbose ?? false;
+      const logger = createLogger({ silent: !verbose, level: "info" });
+
       const mcpClientManager = getMCPClientManager();
+      mcpClientManager.setLogger(logger);
+
       await mcpClientManager.removeClient(name);
 
       await removeMCPServer(name);
