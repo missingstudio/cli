@@ -1,5 +1,5 @@
 // via https://github.com/maticzav/ink-table
-// inlined here because of https://github.com/maticzav/ink-table/issues/258
+// patched: max column width 20 + auto-wrap long values
 
 import React from "react";
 import { Box, Text } from "ink";
@@ -40,6 +40,7 @@ export type TableProps<T extends ScalarDict> = {
    * Component used to render the skeleton of the table.
    */
   skeleton: (props: React.PropsWithChildren<unknown>) => React.JSX.Element;
+  maxCellWidth: number;
 };
 
 /* Table */
@@ -60,6 +61,7 @@ export default class Table<T extends ScalarDict> extends React.Component<
       header: this.props.header || Header,
       cell: this.props.cell || Cell,
       skeleton: this.props.skeleton || Skeleton,
+      maxCellWidth: this.props.maxCellWidth || 40,
     };
   }
 
@@ -86,19 +88,21 @@ export default class Table<T extends ScalarDict> extends React.Component<
    * Returns a list of column names and their widths.
    */
   getColumns(): Column<T>[] {
-    const { columns, padding } = this.getConfig();
+    const { columns, padding, maxCellWidth } = this.getConfig();
 
     const widths: Column<T>[] = columns.map((key) => {
       const header = String(key).length;
       /* Get the width of each cell in the column */
       const data = this.props.data.map((data) => {
         const value = data[key];
-
         if (value == undefined || value == null) return 0;
         return String(value).length;
       });
 
-      const width = Math.max(...data, header) + padding * 2;
+      let width = Math.max(...data, header) + padding * 2;
+
+      // enforce max width
+      width = Math.min(width, maxCellWidth);
 
       /* Construct a cell */
       return {
@@ -273,64 +277,80 @@ type Column<T> = {
 };
 
 /**
+ * Word-wrap utility: splits text into chunks of max length
+ */
+function wrapText(str: string, max: number): string[] {
+  const result: string[] = [];
+  let i = 0;
+  while (i < str.length) {
+    result.push(str.slice(i, i + max));
+    i += max;
+  }
+  return result.length ? result : [""];
+}
+
+/**
  * Constructs a Row element from the configuration.
  */
 function row<T extends ScalarDict>(
   config: RowConfig,
 ): (props: RowProps<T>) => React.JSX.Element {
   /* This is a component builder. We return a function. */
-
   const skeleton = config.skeleton;
 
   /* Row */
-  return (props) => (
-    <Box flexDirection="row">
-      {/* Left */}
-      <skeleton.component>{skeleton.left}</skeleton.component>
-      {/* Data */}
-      {...intersperse(
-        (i) => {
-          const key = `${props.key}-hseparator-${i}`;
+  return (props) => {
+    // compute wrapped values for each column
+    const wrappedColumns = props.columns.map((column) => {
+      const rawValue = props.data[column.column];
+      const contentMax = column.width - config.padding * 2;
+      const displayValue = rawValue == null ? "" : String(rawValue);
+      return wrapText(displayValue, Math.max(contentMax, 1));
+    });
 
-          // The horizontal separator.
-          return (
-            <skeleton.component key={key}>{skeleton.cross}</skeleton.component>
-          );
-        },
+    // figure out max number of lines for this row
+    const maxLines = Math.max(...wrappedColumns.map((c) => c.length), 1);
 
-        // Values.
-        props.columns.map((column, colI) => {
-          // content
-          const value = props.data[column.column];
+    return (
+      <Box flexDirection="column">
+        {Array.from({ length: maxLines }).map((_, lineIndex) => (
+          <Box key={`${props.key}-line-${lineIndex}`} flexDirection="row">
+            {/* Left */}
+            <skeleton.component>{skeleton.left}</skeleton.component>
+            {/* Data */}
+            {intersperse(
+              (i) => (
+                <skeleton.component
+                  key={`${props.key}-hseparator-${i}-line-${lineIndex}`}
+                >
+                  {skeleton.cross}
+                </skeleton.component>
+              ),
+              props.columns.map((column, colI) => {
+                const lines = wrappedColumns[colI] || [];
+                const content = lines[lineIndex] ?? ""; // empty if no line
+                const ml = config.padding;
+                const mr = column.width - content.length - config.padding;
 
-          if (value == undefined || value == null) {
-            const key = `${props.key}-empty-${column.key}`;
-
-            return (
-              <config.cell key={key} column={colI}>
-                {skeleton.line.repeat(column.width)}
-              </config.cell>
-            );
-          } else {
-            const key = `${props.key}-cell-${column.key}`;
-
-            // margins
-            const ml = config.padding;
-            const mr = column.width - String(value).length - config.padding;
-
-            return (
-              /* prettier-ignore */
-              <config.cell key={key} column={colI}>
-                {`${skeleton.line.repeat(ml)}${String(value)}${skeleton.line.repeat(mr)}`}
-              </config.cell>
-            );
-          }
-        }),
-      )}
-      {/* Right */}
-      <skeleton.component>{skeleton.right}</skeleton.component>
-    </Box>
-  );
+                return (
+                  <config.cell
+                    key={`${props.key}-cell-${column.key}-${lineIndex}`}
+                    column={colI}
+                  >
+                    {`${skeleton.line.repeat(ml)}${content}${skeleton.line.repeat(
+                      Math.max(mr, 0),
+                    )}`}
+                  </config.cell>
+                );
+              }),
+            )}
+            {/* Right */}
+            <skeleton.component>{skeleton.right}</skeleton.component>
+          </Box>
+        ))}
+      </Box>
+    );
+  };
 }
 
 /**
@@ -352,7 +372,7 @@ export function Cell(props: CellProps) {
 }
 
 /**
- * Redners the scaffold of the table.
+ * Renders the scaffold of the table.
  */
 export function Skeleton(props: React.PropsWithChildren<unknown>) {
   return <Text bold>{props.children}</Text>;

@@ -53,3 +53,24 @@ export function mergeEnvironment(
     ...configEnvironment,
   };
 }
+
+export function parseKeyValue(entries?: string[]): Record<string, string> {
+  if (!entries || entries.length === 0) return {};
+
+  return entries.reduce<Record<string, string>>((acc, entry) => {
+    const idx = entry.indexOf("=");
+    if (idx === -1) {
+      throw new Error(`Invalid option '${entry}', must be in KEY=VALUE format`);
+    }
+
+    const key = entry.slice(0, idx).trim();
+    const value = entry.slice(idx + 1).trim();
+
+    if (!key) {
+      throw new Error(`Invalid option '${entry}', missing KEY before '='`);
+    }
+
+    acc[key] = value;
+    return acc;
+  }, {});
+}

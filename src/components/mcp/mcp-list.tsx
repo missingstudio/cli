@@ -24,7 +24,7 @@ export function MCPList({ verbose = false }: { verbose?: boolean }) {
 
   return (
     <Box flexDirection="column">
-      <Table data={rows} />
+      <Table data={rows} maxCellWidth={45} />
       <MCPSummary summary={summary} verbose={verbose} />
     </Box>
   );
