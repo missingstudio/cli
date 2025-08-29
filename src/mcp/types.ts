@@ -11,7 +11,7 @@ import type {
  * List of all MCP client transport types.
  * Which define the communication protocol used to connect MCP servers.
  */
-export type TransportType = "stdio" | "sse" | "streamable-http";
+export type TransportType = "stdio" | "sse" | "http" | "streamable-http";
 
 export interface BaseServerConfig {
   type: TransportType;

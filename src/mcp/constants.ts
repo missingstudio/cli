@@ -2,6 +2,7 @@ export const DEFAULT_TIMEOUT_MS = 60000;
 export const TRANSPORT_TYPES = {
   STDIO: "stdio",
   SSE: "sse",
+  HTTP: "http",
   STREAMABLE_HTTP: "streamable-http",
 } as const;
 

@@ -21,7 +21,7 @@ export function createMCPCommand(): Command {
     .argument("<name>", "Server name")
     .option(
       "-t, --transport <type>",
-      "Transport type: stdio | sse | streamable-http",
+      "Transport type: stdio | sse | streamable-http (alias: http)",
       "stdio",
     )
     .option(
@@ -43,7 +43,7 @@ export function createMCPCommand(): Command {
       switch (opts.transport as TransportType) {
         case TRANSPORT_TYPES.STDIO:
           config = {
-            type: "stdio",
+            type: TRANSPORT_TYPES.STDIO,
             command: opts.command,
             args: opts.args,
             env: parseKeyValue(opts.env),
@@ -53,16 +53,17 @@ export function createMCPCommand(): Command {
           break;
         case TRANSPORT_TYPES.SSE:
           config = {
-            type: "sse",
+            type: TRANSPORT_TYPES.SSE,
             url: opts.url,
             headers: parseKeyValue(opts.header),
             timeout: opts.timeout,
             enabled: opts.enabled,
           };
           break;
+        case TRANSPORT_TYPES.HTTP:
         case TRANSPORT_TYPES.STREAMABLE_HTTP:
           config = {
-            type: "streamable-http",
+            type: TRANSPORT_TYPES.STREAMABLE_HTTP,
             url: opts.url,
             headers: parseKeyValue(opts.header),
             timeout: opts.timeout,
