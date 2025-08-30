@@ -4,7 +4,7 @@ import { loadMCPConfig } from "../../mcp/config.js";
 import { getMCPClientManager } from "../../mcp/manager.js";
 import { createLogger } from "../../logger/index.js";
 
-export function useMCPServers(exit: () => void, verbose: boolean) {
+export function useMCPServers(verbose: boolean) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -92,7 +92,7 @@ export function useMCPServers(exit: () => void, verbose: boolean) {
         await mgr.disconnectAll();
       }
     })();
-  }, [exit]);
+  }, []);
 
   return { loading, rows, summary, error };
 }

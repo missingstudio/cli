@@ -1,4 +1,3 @@
-import { useApp } from "ink";
 import { useMCPTest } from "./useMCPTest.js";
 import {
   ConnectingState,
@@ -8,8 +7,7 @@ import {
 } from "./mcp-base.js";
 
 export function MCPTest({ name }: { name: string }) {
-  const { exit } = useApp();
-  const { phase, error, transport, tools } = useMCPTest(name, exit);
+  const { phase, error, transport, tools } = useMCPTest(name);
 
   if (phase === "connecting")
     return <ConnectingState name={name} transport={transport} />;

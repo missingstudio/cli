@@ -96,7 +96,7 @@ mcp
     console.log("Starting MCP server health check...");
     const { waitUntilExit } = render(React.createElement(MCPList, { verbose }));
 
-    await waitUntilExit();
+    waitUntilExit().then(() => process.exit(0));
   });
 
 mcp
@@ -121,5 +121,5 @@ mcp
   .description("Test connection to an MCP server")
   .action(async (name: string) => {
     const { waitUntilExit } = render(React.createElement(MCPTest, { name }));
-    await waitUntilExit();
+    waitUntilExit().then(() => process.exit(0));
   });

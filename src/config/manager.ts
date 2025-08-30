@@ -1,9 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import type { Provider } from "../agents/types.js";
 
 export interface ProjectSettings {
+  provider?: Provider;
   model?: string;
+
   mcpServers?: Record<string, any>;
   // allow other properties without typing them strictly
   [key: string]: unknown;
@@ -67,6 +70,8 @@ export class ConfigManager {
         this.projectSettingsPath,
         JSON.stringify(mergedSettings, null, 2),
       );
+
+      fs.chmodSync(this.projectSettingsPath, 0o600);
     } catch (error) {
       console.error(
         "Failed to save project settings:",

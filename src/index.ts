@@ -7,6 +7,7 @@ import { Command } from "commander";
 import App from "./ui/app.js";
 import pkg from "../package.json" with { type: "json" };
 import { mcp } from "./commands/mcp.js";
+import { loadAgentConfig } from "./agents/config.js";
 
 async function main() {
   const program = new Command();
@@ -27,12 +28,29 @@ async function main() {
     .option("-c, --config <path>", "Path to config file")
     .option("-v, --verbose", "Enable verbose logging", false);
 
+  program
+    .command("interactive")
+    .alias("i")
+    .description("Start an interactive ui mode")
+    .action(async function () {
+      const { provider, model } = loadAgentConfig();
+
+      const { waitUntilExit } = render(
+        React.createElement(App, { provider, model }),
+      );
+      waitUntilExit().then(() => process.exit(0));
+    });
+
   // Register built-in commands
   program.addCommand(mcp);
 
   // If user supplies only options but no subcommand, show interactive UI
   program.action(() => {
-    render(React.createElement(App));
+    const { provider, model } = loadAgentConfig();
+    const { waitUntilExit } = render(
+      React.createElement(App, { provider, model }),
+    );
+    waitUntilExit().then(() => process.exit(0));
   });
 
   program.showHelpAfterError("(add --help for usage)");

@@ -3,12 +3,12 @@ import { useEffect } from "react";
 import { Spinner } from "@inkjs/ui";
 
 import { useMCPServers } from "./useMCPServers.js";
-import { MCPEmpty, MCPError, MCPSummary, MCPTable } from "./mcp-base.js";
+import { MCPEmpty, MCPError, MCPSummary } from "./mcp-base.js";
 import Table from "../ink-table.js";
 
 export function MCPList({ verbose = false }: { verbose?: boolean }) {
   const { exit } = useApp();
-  const { loading, rows, summary, error } = useMCPServers(exit, verbose);
+  const { loading, rows, summary, error } = useMCPServers(verbose);
 
   // After data is ready and rendered, politely exit to finalize output
   useEffect(() => {

@@ -3,9 +3,9 @@ import { render } from "ink-testing-library";
 import App from "./app.js";
 
 describe("App", () => {
-  it("greets provided config", () => {
+  it("shows provider selection when no config provided", () => {
     const { lastFrame } = render(<App />);
     const output = lastFrame() ?? "";
-    expect(output).toContain("Welcome to missing studio");
+    expect(output).toContain("A provider, you must choose:");
   });
 });

@@ -1,7 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import { config } from "dotenv";
 
 export function resolveCommand(command: string): string {
   // If it's already an absolute path, return as-is

@@ -44,7 +44,7 @@ async function fetchClientTools(client: IMCPClient): Promise<Tool[]> {
   }));
 }
 
-export function useMCPTest(name: string, exit: () => void) {
+export function useMCPTest(name: string) {
   const [phase, setPhase] = useState<Phase>("connecting");
   const [error, setError] = useState<string | null>(null);
   const [transport, setTransport] = useState<string>("");
@@ -77,12 +77,12 @@ export function useMCPTest(name: string, exit: () => void) {
         setError(e instanceof Error ? e.message : String(e));
         setPhase("error");
       } finally {
-        // Keep connection open for interactive test view.
-        // If you ever need to auto-disconnect here, do it carefully:
+        // We disconnect after gathering data to keep the test
+        // output deterministic and avoid lingering processes.
         await getMCPClientManager().disconnectAll();
       }
     })();
-  }, [exit, name]);
+  }, [name]);
 
   return { phase, error, transport, tools };
 }
