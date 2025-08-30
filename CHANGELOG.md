@@ -1,5 +1,11 @@
 # @missingstudio/cli
 
+## 0.0.5
+
+### Patch Changes
+
+- Add interactive ui via ai agent
+
 ## 0.0.3
 
 ### Patch Changes

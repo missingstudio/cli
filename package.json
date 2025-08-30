@@ -1,6 +1,6 @@
 {
   "name": "@missingstudio/cli",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Missing Studio's AI assistant for interacting with the Model Context Protocol servers",
   "keywords": [
     "mcp",
