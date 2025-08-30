@@ -44,14 +44,22 @@ async function fetchClientTools(client: IMCPClient): Promise<Tool[]> {
   }));
 }
 
-export function useMCPTest(name: string) {
+export type UseMcpTestResult = {
+  phase: Phase;
+  error: string | null;
+  transport: string;
+  tools: Tool[];
+};
+
+export function useMCPTest(name: string): UseMcpTestResult {
   const [phase, setPhase] = useState<Phase>("connecting");
   const [error, setError] = useState<string | null>(null);
   const [transport, setTransport] = useState<string>("");
   const [tools, setTools] = useState<Tool[]>([]);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const run = async () => {
       setError(null);
       setPhase("connecting");
 
@@ -61,27 +69,32 @@ export function useMCPTest(name: string) {
 
         // 2) Resolve transport and expose early for UI
         const resolvedTransport = getTransport(serverConfig);
-        setTransport(resolvedTransport);
+        if (!cancelled) setTransport(resolvedTransport);
 
         // 3) Connect and verify client
         const client = await connectAndGetClient(name, serverConfig);
 
         // 4) Fetch tools from connected client
-        setPhase("tools");
+        if (!cancelled) setPhase("tools");
         const fetchedTools = await fetchClientTools(client);
-        setTools(fetchedTools);
+        if (!cancelled) setTools(fetchedTools);
 
         // 5) Done
-        setPhase("done");
+        if (!cancelled) setPhase("done");
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-        setPhase("error");
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) setPhase("error");
       } finally {
         // We disconnect after gathering data to keep the test
         // output deterministic and avoid lingering processes.
         await getMCPClientManager().disconnectAll();
       }
-    })();
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
   }, [name]);
 
   return { phase, error, transport, tools };

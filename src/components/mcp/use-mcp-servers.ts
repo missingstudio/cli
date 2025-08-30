@@ -4,7 +4,14 @@ import { loadMCPConfig } from "../../mcp/config.js";
 import { getMCPClientManager } from "../../mcp/manager.js";
 import { createLogger } from "../../logger/index.js";
 
-export function useMCPServers(verbose: boolean) {
+export type UseMcpServersResult = {
+  loading: boolean;
+  error: string | null;
+  rows: Row[];
+  summary: Summary;
+};
+
+export function useMCPServers(verbose: boolean): UseMcpServersResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -16,6 +23,8 @@ export function useMCPServers(verbose: boolean) {
   });
 
   useEffect(() => {
+    let cancelled = false;
+
     (async () => {
       try {
         const logger = createLogger({ silent: !verbose, level: "info" });
@@ -27,7 +36,7 @@ export function useMCPServers(verbose: boolean) {
         const servers = Object.entries(config.servers || {});
 
         if (servers.length === 0) return;
-        setSummary((s) => ({ ...s, total: servers.length }));
+        if (!cancelled) setSummary((s) => ({ ...s, total: servers.length }));
 
         await manager.initializeFromConfig(config.servers);
         const failed = manager.getFailedConnections();
@@ -77,21 +86,25 @@ export function useMCPServers(verbose: boolean) {
           });
         }
 
-        setRows(builtRows);
-        setSummary({
-          connected: connectedCount,
-          failed: failedCount,
-          disabled: disabledCount,
-          total: servers.length,
-        });
+        if (!cancelled) setRows(builtRows);
+        if (!cancelled)
+          setSummary({
+            connected: connectedCount,
+            failed: failedCount,
+            disabled: disabledCount,
+            total: servers.length,
+          });
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
         const mgr = getMCPClientManager();
         await mgr.disconnectAll();
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return { loading, rows, summary, error };
