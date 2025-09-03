@@ -13,7 +13,7 @@ async function main() {
   const program = new Command();
 
   program
-    .name("mstudio")
+    .name("missingstudio")
     .description((pkg as any).description)
     .version(
       (pkg as any).version,
