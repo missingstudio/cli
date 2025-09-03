@@ -50,6 +50,7 @@ export default function App({ provider, model }: AppProps) {
       model: selectedModel,
       enabled: Boolean(selectedProvider && selectedModel && readyForApi),
     });
+
   const [currentInput, setCurrentInput] = useState<string>("");
   const [showHelp, setShowHelp] = useState(false);
   const { exit } = useApp();
