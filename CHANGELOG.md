@@ -1,5 +1,11 @@
 # @missingstudio/cli
 
+## 0.0.6
+
+### Patch Changes
+
+- Add Banner support
+
 ## 0.0.5
 
 ### Patch Changes
